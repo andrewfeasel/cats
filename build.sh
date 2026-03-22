@@ -1,3 +1,5 @@
 #!/bin/sh
 echo "Building cats ..."
-exec fasm cats.asm cats
+
+tcc -run src/sysconsts_build.c
+exec fasm src/cats.asm cats
