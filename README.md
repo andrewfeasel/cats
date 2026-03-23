@@ -1,6 +1,6 @@
 # cats
 
-**440 bytes. x64 Assembly. cat(1) clone.**
+**A very small cat(1) clone**
 
 Uses `sendfile(2)` for zero-copy file output—data transfers directly from kernel filesystem cache to stdout without touching userspace.
 Handles all types of files.

@@ -28,6 +28,7 @@ _write:
 		mov rdx, QWORD [rsp + 16]
 		sub rdx, rax
 		mov rsi, QWORD [rsp + 8]
+		add rsi, rax
 		mov rdi, QWORD [rsp]
 		mov eax, 1
 		syscall
