@@ -4,6 +4,36 @@ entry _start
 include "sysconsts.inc"
 
 segment executable readable
+
+_write:
+	sub rsp, 24
+	mov QWORD [rsp], rdi
+	mov QWORD [rsp + 8], rsi
+	mov QWORD [rsp + 16], rdx
+
+	mov eax, 1
+	syscall
+
+	test rax, rax
+	jle short _write.exit
+
+	cmp rax, QWORD [rsp + 16]
+	jl short _write.partial
+
+	.exit:
+		add rsp, 24
+		ret
+
+	.partial:
+		mov rdx, QWORD [rsp + 16]
+		sub rdx, rax
+		mov rsi, QWORD [rsp + 8]
+		mov rdi, QWORD [rsp]
+		mov eax, 1
+		syscall
+
+		jmp short _write.exit
+
 printfile:
 	mov eax, 2
 	xor esi, esi
@@ -98,10 +128,9 @@ _start:
 				js _start.exit_err
 
 				mov edx, eax
-				mov eax, 1
 				mov edi, 1
 				mov rsi, rsp
-				syscall
+				call _write
 
 				test ax, ax
 				js _start.exit_err
