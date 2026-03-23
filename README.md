@@ -1,17 +1,20 @@
 # cats
 
-**A very small cat(1) clone**
+**A very small "cat" clone**
 
-Uses `sendfile(2)` for zero-copy file output—data transfers directly from kernel filesystem cache to stdout without touching userspace.
-Handles all types of files.
+## Description
+"cats" is optimized highly. it is tuned for all file types, and it compiles to less than a kilobyte
+on x64 Debian. this program does not link to libc, or any other libraries. Because of that, it is small and efficient,
+with the side effect of not accepting non-path arguments. Subsequently, the five people on this planet that use options for "cat"
+will be very dissapointed with me. Despite that, "cats" gets the job done, and it does it efficiently.
+
 
 ## Build
 
 ```sh
 sh build.sh
 ```
-
-Requires `fasm` and `tcc`.
+Dependencies: fasm, tcc
 
 ## Usage
 
@@ -19,6 +22,7 @@ Requires `fasm` and `tcc`.
 cats file1 file2 file3 ...
 cats
 echo "foo" | cats
+cats foo.txt | some_program
 ```
 
-Outputs files to stdout. Exits 0 on success, 1 on error.
+"cats" does what "cat" does.
