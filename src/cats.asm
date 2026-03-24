@@ -34,7 +34,6 @@ printfile:
 	ret
 
 	.open_err:
-		pop rbx
 		mov eax, -1
 		ret
 
