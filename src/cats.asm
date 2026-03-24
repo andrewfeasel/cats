@@ -10,7 +10,7 @@ printfile:
 	xor esi, esi
 	syscall
 
-	test rax, rax
+	test eax, eax
 	js short printfile.open_err
 
 	push rax
@@ -23,11 +23,11 @@ printfile:
 		mov eax, 40
 		syscall
 
-		test rax, rax
+		test eax, eax
 		jg short printfile.printloop
 
 	pop rax
-	mov rdi, rax
+	mov edi, eax
 	mov eax, 3
 	syscall
 
@@ -49,7 +49,7 @@ _start:
 		mov rdi, [rsp + rbx]
 		call printfile
 
-		test rax, rax
+		test eax, eax
 		js _start.exit_err
 
 		add ebx, 8
