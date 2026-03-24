@@ -5,62 +5,32 @@ include "sysconsts.inc"
 
 segment executable readable
 
-_write:
-	sub rsp, 24
-	mov QWORD [rsp], rdi
-	mov QWORD [rsp + 8], rsi
-	mov QWORD [rsp + 16], rdx
-
-	mov eax, 1
-	syscall
-
-	test rax, rax
-	jle short _write.exit
-
-	cmp rax, QWORD [rsp + 16]
-	jl short _write.partial
-
-	.exit:
-		add rsp, 24
-		ret
-
-	.partial:
-		mov rdx, QWORD [rsp + 16]
-		sub rdx, rax
-		mov rsi, QWORD [rsp + 8]
-		add rsi, rax
-		mov rdi, QWORD [rsp]
-		mov eax, 1
-		syscall
-
-		jmp short _write.exit
-
 printfile:
 	mov eax, 2
 	xor esi, esi
 	syscall
 
-	test ax, ax
+	test rax, rax
 	js short printfile.open_err
-	push rbx
-	mov ebx, eax
+
+	push rax
+	mov edi, 1
+	mov esi, eax
+	xor edx, edx
+	mov r10d, 4096
 
 	.printloop:
 		mov eax, 40
-		mov edi, 1
-		mov esi, ebx
-		xor edx, edx
-		mov r10d, 4096
 		syscall
 
-		test ax, ax
+		test rax, rax
 		jg short printfile.printloop
 
+	pop rax
+	mov rdi, rax
 	mov eax, 3
-	mov edi, ebx
 	syscall
 
-	pop rbx
 	ret
 
 	.open_err:
@@ -80,7 +50,7 @@ _start:
 		mov rdi, [rsp + rbx]
 		call printfile
 
-		test ax, ax
+		test rax, rax
 		js _start.exit_err
 
 		add ebx, 8
@@ -97,7 +67,7 @@ _start:
 		syscall
 		add rsp, SIZEOF_STRUCT_TERMIOS
 
-		test ax, ax
+		test rax, rax
 		jns .tty_fd
 
 		.piped_fd:
@@ -107,10 +77,9 @@ _start:
 			mov edx, 1
 			xor r10d, r10d
 			mov r8d, 4096
-			xor r9d, r9d
 			syscall
 
-			test ax, ax
+			test rax, rax
 			js  _start.exit_err
 			jnz _start.piped_fd
 			jmp _start.exit_ok
@@ -125,15 +94,20 @@ _start:
 				mov edx, 4096
 				syscall
 
-				test ax, ax
+				test rax, rax
 				js _start.exit_err
 
 				mov edx, eax
+				mov eax, 1
 				mov edi, 1
 				mov rsi, rsp
-				call _write
+				syscall
 
-				test ax, ax
+				cmp eax, edx
+				jl partial_write
+
+				.partial_write_ret:
+				test rax, rax
 				js _start.exit_err
 				jnz _start.rw_loop
 
@@ -148,3 +122,14 @@ _start:
 		mov eax, 60
 		mov edi, 1
 		syscall
+
+partial_write:
+	sub rdx, rax
+	add rsi, rax
+	mov eax, 1
+	syscall
+
+	test rax, rax
+	js _start.exit_err
+
+	jmp	_start.partial_write_ret
