@@ -50,12 +50,15 @@ _start:
 		call printfile
 
 		test eax, eax
-		js _start.exit_err
+		sets dil
+		js exit
 
 		add ebx, 8
 		cmp ebx, r12d
+
 		jle _start.print_args
-		jmp _start.exit_ok
+		xor edi, edi
+		jmp exit
 
 	.print_stdin:
 		sub rsp, SIZEOF_STRUCT_TERMIOS
@@ -66,69 +69,71 @@ _start:
 		syscall
 		add rsp, SIZEOF_STRUCT_TERMIOS
 
-		test rax, rax
+		test eax, eax
 		jns .tty_fd
 
-		.piped_fd:
-			mov eax, 275
+	.piped_fd:
+		mov eax, 275
+		xor edi, edi
+		xor esi, esi
+		mov edx, 1
+		xor r10d, r10d
+		mov r8d, 4096
+		syscall
+
+		test eax, eax
+		sets dil
+
+		js exit
+		jnz _start.piped_fd
+		jmp exit
+
+	.tty_fd:
+		mov rbp, rsp
+		sub rsp, 4096
+
+		.rw_loop:
+			xor eax, eax
 			xor edi, edi
-			xor esi, esi
-			mov edx, 1
-			xor r10d, r10d
-			mov r8d, 4096
+			mov rsi, rsp
+			mov edx, 4096
 			syscall
 
-			test rax, rax
-			js  _start.exit_err
-			jnz _start.piped_fd
-			jmp _start.exit_ok
+			test eax, eax
+			sets dil
+			js exit
 
-		.tty_fd:
-			sub rsp, 4096
+			mov edx, eax
+			mov eax, 1
+			mov edi, 1
+			mov rsi, rsp
+			syscall
 
-			.rw_loop:
-				xor eax, eax
-				xor edi, edi
-				mov rsi, rsp
-				mov edx, 4096
-				syscall
+			cmp eax, edx
+			jl partial_write
 
-				test rax, rax
-				js _start.exit_err
+			.partial_write_ret:
+			test eax, eax
 
-				mov edx, eax
-				mov eax, 1
-				mov edi, 1
-				mov rsi, rsp
-				syscall
+			sets dil
+			cmovs rsp, rbp
+			js exit
 
-				cmp eax, edx
-				jl partial_write
+			jnz _start.rw_loop
 
-				.partial_write_ret:
-				test rax, rax
-				js _start.exit_err
-				jnz _start.rw_loop
+		mov rsp, rbp
 
-			add rsp, 4096
-
-	.exit_ok:
-		mov eax, 60
-		xor edi, edi
-		syscall
-
-	.exit_err:
-		mov eax, 60
-		mov edi, 1
-		syscall
+	xor dil, dil
+	jmp exit
 
 partial_write:
 	sub rdx, rax
 	add rsi, rax
 	mov eax, 1
 	syscall
-
-	test rax, rax
-	js _start.exit_err
-
 	jmp	_start.partial_write_ret
+
+exit:
+	movzx edi, dil
+	mov eax, 60
+	syscall
