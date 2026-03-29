@@ -100,6 +100,7 @@ _start:
 			syscall
 
 			test eax, eax
+			cmovs rsp, rbp
 			sets dil
 			js exit
 
